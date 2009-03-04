@@ -17,7 +17,7 @@ module Moneta
       super
     end
     
-    def fetch(key, default)
+    def fetch(key, default = nil, &blk)
       check_expired(key)
       super
     end
