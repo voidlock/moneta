@@ -51,37 +51,22 @@ module Moneta
         ::File.exist?(path(key))
       end
       
-      def has_key?(key)
-        ::File.exist?(path(key))
-      end
-      
-      def [](key)
+      def fetch(key, *args)
         if ::File.exist?(path(key))
           Marshal.load(::File.read(path(key)))
         end
       end
       
-      def []=(key, value)
-        ::File.open(path(key), "w") do |file|
-          contents = Marshal.dump(value)
-          file.puts(contents)
-        end
-      end
-      
-      def fetch(key, value = nil)
-        value ||= block_given? ? yield(key) : default
-        self[key] || value
-      end
-      
       def delete(key)
-        value = self[key]
         FileUtils.rm(path(key))
-        value
       rescue Errno::ENOENT
       end
       
       def store(key, value, options = {})
-        self[key] = value
+        ::File.open(path(key), "w") do |file|
+          contents = Marshal.dump(value)
+          file.puts(contents)
+        end
       end
       
       def clear
@@ -95,6 +80,7 @@ module Moneta
       end
     end
     include Implementation
+    include BaseImplementation
     include Expires
     
   end

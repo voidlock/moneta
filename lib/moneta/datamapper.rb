@@ -47,7 +47,7 @@ module Moneta
 
       private
       def get(key)
-        repository(@repository) { @klass.get(key) }
+        DataMapper.repository(@repository) { @klass.get(key) }
       end
     end
 
@@ -60,46 +60,30 @@ module Moneta
     end
 
     module Implementation
-      def key?(key)
-        repository_context { !!@hash.get(key) }
-      end
-
-      def has_key?(key)
-        repository_context { !!@hash.get(key) }
-      end
-
-      def [](key)
-        repository_context { @hash.value(key) }
-      end
-
-      def []=(key, value)
+      def fetch(key, *args)
         repository_context {
           obj = @hash.get(key)
           if obj
-            obj.update(key, value)
-          else
-            @hash.create(:the_key => key, :value => value)
+            obj = obj.value
           end
-        }
-      end
-
-      def fetch(key, value = nil)
-        repository_context {
-          value ||= block_given? ? yield(key) : default
-          self[key] || value
+          obj
         }
       end
 
       def delete(key)
-        repository_context {
-          value = self[key]
-          @hash.all(:the_key => key).destroy!
-          value
-        }
+        repository_context { @hash.all(:the_key => key).destroy! }
       end
 
       def store(key, value, options = {})
-        repository_context { self[key] = value }
+        repository_context {
+          obj = @hash.get(key)
+          if obj
+            obj.update(key, value)
+            obj
+          else
+            @hash.create(:the_key => key, :value => value)
+          end
+        }
       end
 
       def clear
@@ -108,10 +92,11 @@ module Moneta
 
       private
       def repository_context
-        repository(@repository) { yield }
+        DataMapper.repository(@repository) { yield }
       end
     end
     include Implementation
+    include BaseImplementation
     include Expires
   end
 end

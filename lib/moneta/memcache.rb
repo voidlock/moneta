@@ -7,47 +7,29 @@ end
 
 module Moneta  
   class Memcache
-    def initialize(options = {})
-      @cache = MemCache.new(options.delete(:server), options)
+    module Implementation
+      def initialize(options = {})
+        @cache = MemCache.new(options.delete(:server), options)
+      end
+
+      def fetch(key, *args)
+        @cache.get(key)
+      end
+
+      def delete(key)
+        @cache.delete(key)
+      end
+
+      def store(key, value, options = {})
+        args = [key, value, options[:expires_in]].compact
+        @cache.set(*args)
+      end
+
+      def clear
+        @cache.flush_all
+      end
     end
-    
-    def key?(key)
-      !self[key].nil?
-    end
-    
-    alias has_key? key?
-    
-    def [](key)
-      @cache.get(key)
-    end
-    
-    def []=(key, value)
-      store(key, value)
-    end
-    
-    def fetch(key, value = nil)
-      value ||= block_given? ? yield(key) : default
-      self[key] || value
-    end
-    
-    def delete(key)
-      value = self[key]
-      @cache.delete(key) if value
-      value
-    end
-    
-    def store(key, value, options = {})
-      args = [key, value, options[:expires_in]].compact
-      @cache.set(*args)
-    end
-    
-    def update_key(key, options = {})
-      val = self[key]
-      self.store(key, val, options)
-    end
-    
-    def clear
-      @cache.flush_all
-    end
+    include Implementation
+    include BaseImplementation
   end
 end
