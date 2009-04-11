@@ -3,7 +3,7 @@ module Moneta
     attr_writer :default
 
     def key?(key)
-      !self.fetch(key, nil).nil?
+      defined?(super) ? super : !self.fetch(key, nil).nil?
     end
 
     alias :has_key? :key?
